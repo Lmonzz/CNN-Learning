@@ -16,11 +16,11 @@
        <ul class="navbar-nav ml-auto">
          {% if session.get("username") %}
            <li class="nav-item">
-             <a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a>
+             <a class="nav-link" href="{{ url_for('dashboard') }}">Upload</a>
            </li>
            {% if session.get("role") == 'admin' %}
            <li class="nav-item">
-             <a class="nav-link" href="{{ url_for('admin_dashboard') }}">Admin</a>
+             <a class="nav-link" href="{{ url_for('admin_dashboard') }}">Admin Dashboard</a>
            </li>
            {% endif %}
            <li class="nav-item">

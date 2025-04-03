@@ -12,6 +12,7 @@
       <th>Phone</th>
       <th>Email</th>
       <th>Role</th>
+      <th>Actions</th>
     </tr>
   </thead>
   <tbody>
@@ -22,6 +23,10 @@
       <td>{{ user.phone }}</td>
       <td>{{ user.email }}</td>
       <td>{{ user.role }}</td>
+      <td>
+        <a href="{{ url_for('update_user', user_id=user.id) }}" class="btn btn-primary btn-sm">Edit</a>
+        <a href="{{ url_for('delete_user', user_id=user.id) }}" class="btn btn-danger btn-sm">Delete</a>
+      </td>
     </tr>
     {% endfor %}
   </tbody>

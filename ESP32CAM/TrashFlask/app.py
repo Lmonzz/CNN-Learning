@@ -21,7 +21,6 @@ def allowed_file(filename):
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
-app.config['SECRET_KEY'] = 'mysecretkey'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['SECRET_KEY'] = 'mysecretkey'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'flaskApp.sqlite')
@@ -165,6 +164,40 @@ def admin_dashboard():
     users = User.query.all()
     trash = Trash.query.all()
     return render_template('admin_dashboard.html', users=users, trash=trash)
+
+@app.route('/admin/user/update/<int:user_id>', methods=['GET', 'POST'])
+def update_user(user_id):
+    if not session.get("username") or session['role'] != 'admin':
+        flash("You need to login as admin first", "danger")
+        return redirect(url_for('login'))
+    user = User.query.get(user_id)
+    form = updateForm(obj=user)
+    if form.validate_on_submit():
+        if user:
+            user.username = form.username.data
+            user.phone = form.phone.data
+            user.email = form.email.data
+            user.role = form.role.data
+            db.session.commit()
+            flash('User updated successfully')
+        else:
+            flash('User not found', 'danger')
+        return redirect(url_for('admin_dashboard'))
+    return render_template('update_user.html', form=form, user=user)
+
+@app.route('/admin/user/delete/<int:user_id>')
+def delete_user(user_id):
+    if not session.get("username") or session['role'] != 'admin':
+        flash("You need to login as admin first", "danger")
+        return redirect(url_for('login'))
+    user = User.query.get_or_404(user_id)
+    if user:
+        db.session.delete(user)
+        db.session.commit()
+        flash('User deleted successfully')
+    else:
+        flash('User not found', 'danger')
+    return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/reset_trash/<int:trash_id>', methods=['POST'])
 def reset_trash(trash_id):

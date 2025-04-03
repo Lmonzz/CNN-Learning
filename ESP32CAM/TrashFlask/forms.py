@@ -20,5 +20,6 @@ class updateForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
     phone = StringField('Phone', validators=[DataRequired()])
     email = StringField('Email', validators=[DataRequired(), Email()])
+    role = SelectField('Role', choices=[('user', 'User'), ('admin', 'Admin')], validators=[DataRequired()])
     submit = SubmitField('Update')
 

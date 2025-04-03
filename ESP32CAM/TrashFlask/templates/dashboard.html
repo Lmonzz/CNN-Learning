@@ -1,13 +1,53 @@
 {% extends "base.html" %}
 {% block title %}Dashboard{% endblock %}
 {% block content %}
-<h2>Welcome, {{ username }}!</h2>
-<p>This is your dashboard. Use the form below to upload an image for trash classification.</p>
-<form method="POST" action="{{ url_for('upload_img') }}" enctype="multipart/form-data">
-  <div class="form-group">
-    <label for="imageFile">Upload Image</label>
-    <input type="file" class="form-control-file" id="imageFile" name="imageFile" required>
+<div class="container">
+  <div class="row">
+    <div class="col-md-12 text-center">
+      <h2>Welcome, {{ username }}!</h2>
+      <p>Upload an image for trash classification.</p>
+    </div>
   </div>
-  <button type="submit" class="btn btn-primary">Upload & Predict</button>
-</form>
+  <div class="row justify-content-center mt-4">
+    <div class="col-md-6">
+      <form id="uploadForm" method="POST" action="{{ url_for('upload_img') }}" enctype="multipart/form-data">
+        <div class="form-group">
+          <label for="imageFile">Select an Image</label>
+          <input type="file" class="form-control-file" id="imageFile" name="imageFile" accept="image/*" required>
+        </div>
+        <!-- Preview container, initially hidden -->
+        <div id="previewContainer" style="display: none;" class="mb-3">
+          <p>Preview:</p>
+          <img id="previewImage" src="#" alt="Image Preview" class="img-fluid rounded">
+        </div>
+        <button type="submit" class="btn btn-primary">Upload & Predict</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  // When the file input changes, display a preview of the image.
+  document.getElementById('imageFile').addEventListener('change', function(event) {
+      var previewContainer = document.getElementById('previewContainer');
+      var previewImage = document.getElementById('previewImage');
+      var file = event.target.files[0];
+      if(file){
+          var reader = new FileReader();
+          reader.onload = function(e){
+              previewImage.src = e.target.result;
+              previewContainer.style.display = 'block';
+          }
+          reader.readAsDataURL(file);
+      } else {
+          previewContainer.style.display = 'none';
+          previewImage.src = '#';
+      }
+  });
+
+  // Optionally hide the preview on form submission
+  document.getElementById('uploadForm').addEventListener('submit', function() {
+      document.getElementById('previewContainer').style.display = 'none';
+  });
+</script>
 {% endblock %}
