@@ -6,6 +6,7 @@ import os
 from forms import registerForm, loginForm, updateForm
 from predict import continous_prediction
 from datetime import datetime
+from helper import get_category
 
 app = Flask(__name__)
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -62,7 +63,11 @@ class Trash(db.Model):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    stats = db.session.query(Trash.category, db.func.sum(Trash.numbers).label('total')).group_by(Trash.category).all()
+    print(f'Here is what stats look like: {stats}\n')
+    stat_dict = {cat: total for cat, total in stats}
+    print(f'Here is what stat dict look like: {stat_dict}\n')
+    return render_template('index.html', stats = stat_dict)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -139,6 +144,15 @@ def upload_img():
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
         file.save(file_path)
         result = continous_prediction(file_path) 
+        trash_record = Trash.query.filter_by(name=result).first()
+        if trash_record:
+            trash_record.numbers += 1
+        else:
+            category = get_category(result)
+            trash_record = Trash(name=result, category=category)
+            trash_record.numbers = 1
+            db.session.add(trash_record)
+        db.session.commit()
         print(f"Prediction result: {result}")
         return redirect(url_for('dashboard'))
     return render_template('upload_img.html')
