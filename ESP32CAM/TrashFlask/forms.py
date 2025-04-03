@@ -23,3 +23,7 @@ class updateForm(FlaskForm):
     role = SelectField('Role', choices=[('user', 'User'), ('admin', 'Admin')], validators=[DataRequired()])
     submit = SubmitField('Update')
 
+class profileForm(FlaskForm):
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    phone = StringField('Phone', validators=[DataRequired()])
+    submit = SubmitField('Update Profile')

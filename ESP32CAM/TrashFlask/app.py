@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
-from forms import registerForm, loginForm, updateForm
+from forms import registerForm, loginForm, updateForm, profileForm
 from predict import continous_prediction
 from datetime import datetime
 from helper import get_category
@@ -101,7 +101,7 @@ def login():
             session['username'] = user.username
             session['role'] = user.role
             flash('Login successful')
-            return redirect(url_for('dashboard'))
+            return redirect(url_for('index'))
         else:
             flash('Invalid username or password', 'danger')
             return redirect(url_for('login'))
@@ -114,47 +114,84 @@ def logout():
     flash('You have been logged out.', 'info')
     return redirect(url_for('login'))
 
-@app.route('/dashboard')
-def dashboard():
+@app.route('/upload')
+def upload():
     if not session.get("username"):
         flash("You need to login first", "danger")
         return redirect(url_for('login'))
-    return render_template('dashboard.html', username=session['username'])
+    return render_template('upload.html', username=session['username'])
 
 
 @app.route('/upload_img', methods=['POST'])
 def upload_img():
     if not session.get("username"):
         flash("You need to login first", "danger")
-        return redirect(url_for('login'))
+        return redirect(url_for('upload'))
     
     if 'imageFile' not in request.files:
-        return 'No image file part', 400
+        flash("No image file provided", "danger")
+        return redirect(url_for('upload'))
         
     file = request.files['imageFile']
 
     if file.filename == '':
-        return 'No selected file', 400
+        flash("No image selected", "danger")
+        return redirect(url_for('upload'))
 
-    if file:
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        new_filename = f"{timestamp}_{file.filename}"
-        file.filename = new_filename
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
-        file.save(file_path)
-        result = continous_prediction(file_path) 
-        trash_record = Trash.query.filter_by(name=result).first()
-        if trash_record:
-            trash_record.numbers += 1
-        else:
-            category = get_category(result)
-            trash_record = Trash(name=result, category=category)
-            trash_record.numbers = 1
-            db.session.add(trash_record)
+    
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    new_filename = f"{timestamp}_{file.filename}"
+    file.filename = new_filename
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+    file.save(file_path)
+    result = continous_prediction(file_path) 
+    trash_record = Trash.query.filter_by(name=result).first()
+    if trash_record:
+        trash_record.numbers += 1
+    else:
+        category = get_category(result)
+        trash_record = Trash(name=result, category=category)
+        trash_record.numbers = 1
+        db.session.add(trash_record)
+
+    db.session.commit()
+    print(f"Prediction result: {result}")
+    return redirect(url_for('upload'))
+
+@app.route('/profile', methods=['GET', 'POST'])
+def profile():
+    if not session.get("username"):
+        flash("You need to login first", "danger")
+        return redirect(url_for('upload'))
+    
+    user = User.query.filter_by(username=session["username"]).first()
+    if not user:
+        flash("User not found", "danger")
+        return redirect(url_for('login'))
+    
+    form = profileForm(obj=user)
+    if form.validate_on_submit():
+        if form.email.data != user.email:
+            existing_email = User.query.filter_by(email=form.email.data).first()
+            if existing_email:
+                flash("Email already in use", "danger")
+                return redirect(url_for('update_profile'))
+        
+        if form.phone.data != user.phone:
+            existing_phone = User.query.filter_by(phone=form.phone.data).first()
+            if existing_phone:
+                flash("Phone already in use", "danger")
+                return redirect(url_for('update_profile'))
+            
+        user.email = form.email.data
+        user.phone = form.phone.data
         db.session.commit()
-        print(f"Prediction result: {result}")
-        return redirect(url_for('dashboard'))
-    return render_template('upload_img.html')
+        flash("Profile updated successfully", "success")
+        return redirect(url_for('profile'))
+    return render_template('profile.html', form=form, user=user)
+    
+
+    
 
 @app.route('/admin')
 def admin_dashboard():
