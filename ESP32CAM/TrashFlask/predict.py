@@ -13,7 +13,7 @@ def predict_image(image):
     img = resize(image, (224, 224, 3))
     img = np.expand_dims(img, axis=0) 
 
-    prediction = model.predict(img)
+    prediction = model.predict(img)[0]
 
     class_labels = [
         'batlua',
@@ -32,10 +32,11 @@ def predict_image(image):
         'thietbidientu'
     ]
 
-    predicted_index = np.argmax(prediction, axis=1)[0]
+    predicted_index = np.argmax(prediction)
     predicted_label = class_labels[predicted_index]
+    confidence = float(prediction[predicted_index])
 
-    return predicted_label
+    return predicted_label, confidence
 
 def continous_prediction(file_path):
 
@@ -57,10 +58,10 @@ def continous_prediction(file_path):
 
     image = imread(file_path)
 
-    predictions = predict_image(image)
+    predictions, confidence = predict_image(image)
 
     print("Image:", file_name)
-    return predictions
+    return predictions, confidence
 
         
 

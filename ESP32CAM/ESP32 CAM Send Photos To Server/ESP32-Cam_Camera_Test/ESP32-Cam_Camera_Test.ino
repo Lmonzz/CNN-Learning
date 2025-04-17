@@ -26,7 +26,7 @@
 
 // LED Flash PIN (GPIO 4)
 #define FLASH_LED_PIN 4             
-
+#define INP 13
 //======================================== Insert your network credentials.
 const char* ssid = "ninwjbu";
 const char* password = "nguyenloc273";
@@ -34,13 +34,13 @@ const char* password = "nguyenloc273";
 
 //======================================== Variables for Timer/Millis.
 unsigned long previousMillis = 0; 
-const int Interval = 2400; //--> Photo capture every 2.4 seconds.
+const int Interval = 240; //--> Photo capture every 0.24 seconds.
 //======================================== 
 
 // Server Address or Server IP.
-String serverName = "192.168.1.20";  //--> Change with your server computer's IP address or your Domain name.
+String serverName = "192.168.1.23";  //--> Change with your server computer's IP address or your Domain name.
 // The file path "upload_img.php" on the server folder.
-String serverPath = "/upload_img";
+String serverPath = "/upload_img_esp";
 // Server Port.
 const int serverPort = 5000;
 
@@ -179,6 +179,7 @@ void setup() {
   Serial.begin(115200);
   Serial.println();
 
+  pinMode(INP, INPUT);
   pinMode(FLASH_LED_PIN, OUTPUT);
 
   // Setting the ESP32 WiFi to station mode.
@@ -282,8 +283,8 @@ void setup() {
   Serial.println("Set camera ESP32 CAM successfully.");
   //---------------------------------------- 
 
-  Serial.println();
-  Serial.print("ESP32-CAM captures and sends photos to the server every 2.4 seconds.");
+  // Serial.println();
+  // Serial.print("ESP32-CAM captures and sends photos to the server every 2.4 seconds.");
 }
 //________________________________________________________________________________ 
 
@@ -296,7 +297,10 @@ void loop() {
   if (currentMillis - previousMillis >= Interval) {
     previousMillis = currentMillis;
     
-    sendPhotoToServer();
+    if (digitalRead(INP)) {
+      Serial.println("check!!!");
+      sendPhotoToServer();
+    }
   }
   //---------------------------------------- 
 }

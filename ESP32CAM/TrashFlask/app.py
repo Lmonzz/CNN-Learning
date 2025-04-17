@@ -144,7 +144,9 @@ def upload_img():
     file.filename = new_filename
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
     file.save(file_path)
-    result = continous_prediction(file_path) 
+    print(f"File saved to: {file_path}")
+    print(f"File exists: {os.path.exists(file_path)}")
+    result, confidence = continous_prediction(file_path) 
     trash_record = Trash.query.filter_by(name=result).first()
     if trash_record:
         trash_record.numbers += 1
@@ -156,7 +158,52 @@ def upload_img():
 
     db.session.commit()
     print(f"Prediction result: {result}")
-    return redirect(url_for('upload'))
+    return render_template(
+        'upload.html',
+        username=session['username'],
+        result=result,
+        confidence=confidence
+    )
+
+@app.route('/upload_img_esp', methods=['POST'])
+def upload_img_esp():
+    if 'imageFile' not in request.files:
+        return "No image file provided", 400
+
+    file = request.files['imageFile']
+    if file.filename == '':
+        return "No image selected", 400
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"{timestamp}_{file.filename}"
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+    try:
+        file.save(file_path)
+        print(f"File saved to: {file_path}")
+        print(f"Exists? {os.path.exists(file_path)}")
+
+        # Run prediction
+        result = continous_prediction(file_path)
+        print(f"Prediction result: {result}")
+
+        # Update DB
+        trash_record = Trash.query.filter_by(name=result).first()
+        if trash_record:
+            trash_record.numbers += 1
+        else:
+            category = get_category(result)
+            trash_record = Trash(name=result, category=category)
+            trash_record.numbers = 1
+            db.session.add(trash_record)
+
+        db.session.commit()
+        return f"Image uploaded and predicted as: {result}", 200
+    
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        return f"Server error: {str(e)}", 500
+
 
 @app.route('/profile', methods=['GET', 'POST'])
 def profile():
@@ -189,9 +236,6 @@ def profile():
         flash("Profile updated successfully", "success")
         return redirect(url_for('profile'))
     return render_template('profile.html', form=form, user=user)
-    
-
-    
 
 @app.route('/admin')
 def admin_dashboard():
